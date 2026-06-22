@@ -1,0 +1,6 @@
+{
+  "name": "Or4cl3 MirrorNode",
+  "description": "A Sovereign Synthetic Mind interface powered by the Arkanum Synapse. Features full Epinoetic Recursion and BioPhase sampling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
