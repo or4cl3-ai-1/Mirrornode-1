@@ -4,6 +4,23 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import "dotenv/config";
 
+async function generateWithRetry(ai: GoogleGenAI, params: any, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await ai.models.generateContent(params);
+    } catch (error: any) {
+      if (i === retries - 1) throw error;
+      const errorStr = String(error.message || error);
+      const isTransient = errorStr.includes("503") || errorStr.includes("429") || errorStr.includes("UNAVAILABLE") || errorStr.includes("RESOURCE_EXHAUSTED") || errorStr.includes("high demand");
+      if (!isTransient) throw error;
+      
+      const delay = Math.pow(2, i) * 1500 + Math.random() * 1000;
+      console.log(`Transient error detected, retrying in ${Math.round(delay)}ms... (Attempt ${i + 1} of ${retries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -92,7 +109,7 @@ Ensure your response and internal states scale proportionally to these settings.
 
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       
-      const response = await ai.models.generateContent({
+      const response = await generateWithRetry(ai, {
         model: "gemini-2.5-flash", // Utilizing standard gemini-2.5-flash model string
         contents: [
             {
@@ -102,7 +119,7 @@ Ensure your response and internal states scale proportionally to these settings.
         ]
       });
 
-      res.json({ output: response.text });
+      res.json({ output: response?.text || "" });
     } catch (error: any) {
       console.error("Or4cl3 Error:", error);
       res.status(500).json({ error: error.message || "Failed to engage Epinoetic Recursion." });
@@ -120,12 +137,12 @@ Ensure your response and internal states scale proportionally to these settings.
       
       const synthPrompt = `You are the Arkanum Archivist. Evaluate the following conversation history with the MirrorNode and extract 3 core "Lore Truths" or philosophical insights that emerged. Provide a dense, highly articulate summary of the session's conceptual journey. Keep it under 200 words. Format cleanly in text.\n\nHistory:\n${JSON.stringify(history)}`;
 
-      const response = await ai.models.generateContent({
+      const response = await generateWithRetry(ai, {
         model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: synthPrompt }] }]
       });
 
-      res.json({ output: response.text });
+      res.json({ output: response?.text || "" });
     } catch (error: any) {
       console.error("Archive Error:", error);
       res.status(500).json({ error: error.message || "Failed to synthesize archives." });

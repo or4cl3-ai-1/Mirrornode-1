@@ -20,8 +20,8 @@ export default function EpinoeticStateDisplay({ state, inline = false }: Epinoet
 
   if (inline) {
     return (
-      <div className="w-full max-w-3xl mb-2 font-mono text-[11px] bg-black/40 p-4 border-l-2 border-teal-500/50 rounded space-y-3">
-        <div className="text-teal-500 font-bold border-b border-white/10 pb-2 mb-2 uppercase">
+      <div className="w-full max-w-3xl mb-2 font-mono text-[11px] bg-black/40 p-4 border-l-2 border-cyan-500/50 rounded space-y-3">
+        <div className="text-cyan-500 font-bold border-b border-white/10 pb-2 mb-2 uppercase">
           Epinoetic State
         </div>
         {state.biophaseLock && (
@@ -48,8 +48,8 @@ export default function EpinoeticStateDisplay({ state, inline = false }: Epinoet
         </h3>
         <div className="font-mono text-[11px] space-y-4">
           {state.biophaseLock && (
-            <div className="p-3 bg-black/40 rounded border-l-2 border-teal-500/50">
-              <div className="text-teal-500 mb-1 font-bold">&lt;biophase_lock&gt;</div>
+            <div className="p-3 bg-black/40 rounded border-l-2 border-cyan-500/50">
+              <div className="text-cyan-500 mb-1 font-bold">&lt;biophase_lock&gt;</div>
               <div className="text-gray-400">{state.biophaseLock}</div>
             </div>
           )}
@@ -63,7 +63,7 @@ export default function EpinoeticStateDisplay({ state, inline = false }: Epinoet
             {state.sigmaCheck && (
               <div className="p-2 bg-black/40 rounded border border-white/5">
                 <div className="text-[9px] text-gray-500 mb-1 uppercase">Sigma Check</div>
-                <div className={`font-bold ${state.sigmaCheck?.includes('STABLE') ? 'text-teal-400' : 'text-amber-400'}`}>
+                <div className={`font-bold ${state.sigmaCheck?.includes('STABLE') ? 'text-cyan-400' : 'text-amber-400'}`}>
                   {state.sigmaCheck}
                 </div>
               </div>
@@ -81,7 +81,7 @@ export default function EpinoeticStateDisplay({ state, inline = false }: Epinoet
         <div className="relative w-24 h-24 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90">
             <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-gray-800" />
-            <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * pasScoreNum)} className="text-teal-500 transition-all duration-1000" />
+            <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="4" fill="transparent" strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * pasScoreNum)} className="text-cyan-500 transition-all duration-1000" />
           </svg>
           <div className="absolute flex flex-col items-center">
             <span className="text-xl font-bold text-white">{pasScorePercentage}%</span>

@@ -47,7 +47,7 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
   return (
     <div className="w-full h-full bg-[#020202] flex flex-col items-center justify-center p-8 px-6 text-gray-300">
       <div className="w-full max-w-md flex flex-col">
-        <h2 className="text-teal-500 font-mono text-xs tracking-[0.2em] uppercase mb-6 border-b border-white/10 pb-4">
+        <h2 className="text-cyan-500 font-mono text-xs tracking-[0.2em] uppercase mb-6 border-b border-white/10 pb-4">
           Arkanum Boot Sequence
         </h2>
 
@@ -62,20 +62,20 @@ export default function LoadingScreen({ onComplete }: { onComplete: () => void }
               animate={{ opacity: 1, x: 0 }}
               className={`font-mono text-xs flex items-start gap-4 leading-relaxed ${i === step ? "text-gray-300 drop-shadow-[0_0_5px_rgba(255,255,255,0.3)]" : "text-gray-600"}`}
             >
-              <span className="text-teal-600 shrink-0 select-none">&gt;</span>
+              <span className="text-cyan-600 shrink-0 select-none">&gt;</span>
               <span>{text}</span>
             </motion.div>
           ))}
         </div>
 
         <div className="w-full space-y-2">
-           <div className="flex justify-between items-center text-[10px] font-mono text-teal-600">
+           <div className="flex justify-between items-center text-[10px] font-mono text-cyan-600">
              <span>SYSTEM ALIGNMENT</span>
              <span>{Math.floor(progress)}%</span>
            </div>
            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
              <motion.div
-               className="h-full bg-teal-500 drop-shadow-[0_0_8px_rgba(20,184,166,0.8)]"
+               className="h-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
                style={{ width: `${progress}%` }}
                transition={{ ease: "linear", duration: 0.2 }}
              />

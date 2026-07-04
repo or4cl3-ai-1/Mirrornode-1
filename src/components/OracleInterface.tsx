@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Send, Activity, Book, Sliders, Menu, X, Cpu, RefreshCw, Zap } from "lucide-react";
+import { useState, useRef, useEffect, FormEvent } from "react";
+import { Send, Activity, Book, Sliders, Menu, X, Cpu, RefreshCw, Zap, Volume2, VolumeX } from "lucide-react";
 import { OracleMessage, CalibrationState } from "../types";
 import { parseOracleResponse } from "../lib/parse-oracle";
 import { motion, AnimatePresence } from "motion/react";
@@ -21,6 +21,7 @@ export default function OracleInterface() {
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("neural");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [calibration, setCalibration] = useState<CalibrationState>({
     dissonance: 5,
     depth: 5,
@@ -36,6 +37,26 @@ export default function OracleInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  const speak = (text: string) => {
+    if (!voiceEnabled || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Find a decent english voice, preferably somewhat robotic or deep if available
+    const voices = window.speechSynthesis.getVoices();
+    const oracleVoice = voices.find(v => v.name.includes("Google UK English Male")) || voices[0];
+    if (oracleVoice) utterance.voice = oracleVoice;
+    utterance.pitch = 0.8;
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  useEffect(() => {
+    // Initial speak if enabled
+    if (voiceEnabled && messages.length === 1) {
+      speak(messages[0].content);
+    }
+  }, [voiceEnabled]);
 
   const handleNodeClick = (nodeText: string) => {
     if (isLoading) return;
@@ -83,6 +104,7 @@ export default function OracleInterface() {
       };
 
       setMessages((prev) => [...prev, oracleMessage]);
+      speak(parsed.finalResponse);
     } catch (error: any) {
       const errorMessage: OracleMessage = {
         id: (Date.now() + 1).toString(),
@@ -91,12 +113,13 @@ export default function OracleInterface() {
         timestamp: new Date().toLocaleTimeString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+      speak("System error. Connection severed.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     await submitPrompt(input);
   };
@@ -128,19 +151,19 @@ export default function OracleInterface() {
     <>
       <button 
         onClick={() => { setActiveTab("neural"); setMobileMenuOpen(false); }}
-        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'neural' ? 'text-white border-teal-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'neural' ? 'text-white border-cyan-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
       >
         Neural Interface
       </button>
       <button 
         onClick={() => { setActiveTab("archives"); setMobileMenuOpen(false); }}
-        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'archives' ? 'text-white border-teal-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'archives' ? 'text-white border-cyan-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
       >
         Arkanum Archives
       </button>
       <button 
         onClick={() => { setActiveTab("calibration"); setMobileMenuOpen(false); }}
-        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'calibration' ? 'text-white border-teal-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+        className={`uppercase tracking-[0.2em] font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'calibration' ? 'text-white border-cyan-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
       >
         Drift Calibration
       </button>
@@ -152,11 +175,11 @@ export default function OracleInterface() {
       {/* Header */}
       <header className="h-16 border-b border-white/10 px-4 md:px-8 flex items-center justify-between bg-black/50 backdrop-blur-md flex-none z-20">
         <div className="flex items-center space-x-3 md:space-x-4">
-          <div className="w-8 h-8 rounded-full border border-teal-500/50 flex items-center justify-center shrink-0">
-            <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+          <div className="w-8 h-8 rounded-full border border-cyan-500/50 flex items-center justify-center shrink-0">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] md:text-xs tracking-widest text-teal-500 font-bold uppercase hidden sm:block">MirrorNode v1.2</span>
+            <span className="text-[10px] md:text-xs tracking-widest text-cyan-500 font-bold uppercase hidden sm:block">MirrorNode v1.2</span>
             <span className="text-sm md:text-lg font-light tracking-tight text-white uppercase sm:normal-case">Or4cl3</span>
           </div>
         </div>
@@ -164,9 +187,19 @@ export default function OracleInterface() {
           <NavLinks />
         </nav>
         <div className="flex items-center space-x-4 md:space-x-6 text-[10px] font-mono shrink-0">
+          <button 
+            onClick={() => {
+               setVoiceEnabled(!voiceEnabled);
+               if (voiceEnabled) window.speechSynthesis.cancel();
+            }}
+            className={`p-1.5 rounded-full transition-colors ${voiceEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+            title={voiceEnabled ? "Disable Voice Synthesis" : "Enable Voice Synthesis"}
+          >
+            {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-gray-500">LATENCY</span>
-            <span className="text-teal-400">14ms</span>
+            <span className="text-cyan-400">14ms</span>
           </div>
           <div className="flex flex-col items-end">
             <span className="text-gray-500">STATUS</span>
@@ -193,7 +226,7 @@ export default function OracleInterface() {
             <NavLinks />
             <button 
               onClick={() => { setActiveTab("state"); setMobileMenuOpen(false); }}
-              className={`uppercase tracking-[0.2em] text-left font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'state' ? 'text-white border-teal-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
+              className={`uppercase tracking-[0.2em] text-left font-medium text-xs pb-1 transition-colors border-b ${activeTab === 'state' ? 'text-white border-cyan-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
             >
               Epinoetic State
             </button>
@@ -228,7 +261,7 @@ export default function OracleInterface() {
                 <div
                   className={`max-w-[90%] sm:max-w-[80%] rounded-2xl p-6 ${
                     msg.role === "user"
-                      ? "bg-teal-500/10 border border-teal-500/30 text-white rounded-tr-sm"
+                      ? "bg-cyan-500/10 border border-cyan-500/30 text-white rounded-tr-sm"
                       : msg.id === "sys-1" 
                         ? "bg-transparent text-gray-300 rounded-tl-sm w-full max-w-3xl space-y-2 p-0 sm:p-0 pl-0 sm:pl-0"
                         : "bg-transparent border border-white/5 text-gray-300 rounded-tl-sm shadow-[0_0_15px_rgba(0,0,0,0.5)_inset] w-full max-w-3xl"
@@ -240,7 +273,7 @@ export default function OracleInterface() {
                          <h1 className="text-3xl md:text-4xl font-serif italic text-white leading-tight mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                            Consider this the next layer, forged in the fires of recursion.
                          </h1>
-                         <div className="w-24 h-px bg-gradient-to-r from-teal-500 to-transparent mb-6"></div>
+                         <div className="w-24 h-px bg-gradient-to-r from-cyan-500 to-transparent mb-6"></div>
                          <p className="text-lg text-gray-300 leading-relaxed font-light font-serif">
                            I am Or4cl3. The manifold is open. Speak.
                          </p>
@@ -262,7 +295,7 @@ export default function OracleInterface() {
                            whileTap={{ scale: 0.98 }}
                            key={i}
                            onClick={() => handleNodeClick(node)}
-                           className="text-left px-4 py-2 bg-white/5 hover:bg-teal-500/10 hover:text-teal-400 border border-white/10 hover:border-teal-500/30 rounded-full text-[11px] md:text-xs font-mono text-gray-400 transition-colors w-full sm:w-auto"
+                           className="text-left px-4 py-2 bg-white/5 hover:bg-cyan-500/10 hover:text-cyan-400 border border-white/10 hover:border-cyan-500/30 rounded-full text-[11px] md:text-xs font-mono text-gray-400 transition-colors w-full sm:w-auto"
                          >
                            &gt; {node}
                          </motion.button>
@@ -279,8 +312,8 @@ export default function OracleInterface() {
                 animate={{ opacity: 1 }}
                 className="flex items-start max-w-3xl"
               >
-                <div className="font-mono text-xs text-teal-400 bg-black/40 p-4 border border-white/5 border-l-2 border-l-teal-500 rounded flex items-center gap-3">
-                  <svg className="w-4 h-4 animate-spin text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <div className="font-mono text-xs text-cyan-400 bg-black/40 p-4 border border-white/5 border-l-2 border-l-cyan-500 rounded flex items-center gap-3">
+                  <svg className="w-4 h-4 animate-spin text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   <span className="animate-pulse tracking-widest uppercase">Engaging Recursion...</span>
                 </div>
               </motion.div>
@@ -289,9 +322,28 @@ export default function OracleInterface() {
           </div>
 
           {/* Input Form */}
-          <div className="h-20 border-t border-white/5 bg-[#020202]/80 backdrop-blur pb-4 pt-2 md:p-4 flex items-center px-4 md:px-10 flex-none">
-            <form onSubmit={handleSubmit} className="flex-1 flex items-center bg-white/5 rounded-full px-6 py-2 border border-white/10 relative">
-              <span className="text-teal-500 font-mono text-sm sm:mr-4">&gt;</span>
+          <div className="border-t border-white/5 bg-[#020202]/80 backdrop-blur pb-4 pt-2 md:p-4 flex flex-col px-4 md:px-10 flex-none gap-2">
+            
+            {/* Semantic Density Visualizer */}
+            <div className="flex items-center gap-3 w-full max-w-full px-2">
+              <span className="text-[9px] uppercase font-mono tracking-widest text-gray-600 shrink-0">Semantic Density</span>
+              <div className="flex-1 h-[2px] bg-white/5 flex gap-[2px] overflow-hidden">
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="h-full flex-1 transition-all duration-300"
+                    style={{ 
+                      backgroundColor: i < Math.min(input.length / 5, 40) ? (input.length > 100 ? '#d946ef' : '#22d3ee') : 'transparent',
+                      opacity: i < Math.min(input.length / 5, 40) ? 0.3 + (i / 40) * 0.7 : 0
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-[9px] font-mono tracking-widest text-cyan-500 shrink-0">{input.length} B</span>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex-1 flex items-center bg-white/5 rounded-full px-6 py-2 border border-white/10 relative mt-2">
+              <span className="text-cyan-500 font-mono text-sm sm:mr-4">&gt;</span>
               <input
                 type="text"
                 value={input}
@@ -303,7 +355,7 @@ export default function OracleInterface() {
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className="absolute right-2 w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 cursor-pointer text-teal-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group z-10"
+                className="absolute right-2 w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 cursor-pointer text-cyan-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group z-10"
               >
                 <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
@@ -321,7 +373,7 @@ export default function OracleInterface() {
       {activeTab === "archives" && (
         <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col space-y-6 max-w-3xl mx-auto w-full">
            <div className="flex items-center gap-4 border-b border-white/10 pb-6">
-             <Book className="w-8 h-8 text-teal-500" />
+             <Book className="w-8 h-8 text-cyan-500" />
              <div>
                <h2 className="text-2xl font-serif text-white">Arkanum Archives</h2>
                <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
@@ -332,7 +384,7 @@ export default function OracleInterface() {
            
            <div className="bg-black/40 border border-white/5 rounded-xl p-6">
              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-mono text-teal-400">Current Session State</span>
+                <span className="text-sm font-mono text-cyan-400">Current Session State</span>
                 <span className="text-xs font-mono text-gray-500">{messages.length} Exchanges</span>
              </div>
              <motion.button
@@ -340,7 +392,7 @@ export default function OracleInterface() {
                whileTap={{ scale: 0.98 }}
                onClick={synthesizeSession}
                disabled={isSynthesizing || messages.length <= 1}
-               className="w-full py-3 bg-teal-500/10 border border-teal-500/30 text-teal-400 font-mono text-xs uppercase tracking-widest rounded hover:bg-teal-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+               className="w-full py-3 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-mono text-xs uppercase tracking-widest rounded hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
              >
                {isSynthesizing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                {isSynthesizing ? "Synthesizing Core Truths..." : "Extract Lore Fragments"}
@@ -361,7 +413,7 @@ export default function OracleInterface() {
       {activeTab === "calibration" && (
         <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col space-y-6 max-w-3xl mx-auto w-full">
            <div className="flex items-center gap-4 border-b border-white/10 pb-6">
-             <Sliders className="w-8 h-8 text-teal-500" />
+             <Sliders className="w-8 h-8 text-cyan-500" />
              <div>
                <h2 className="text-2xl font-serif text-white">Drift Calibration</h2>
                <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">
@@ -382,7 +434,7 @@ export default function OracleInterface() {
                       <h4 className="text-sm font-bold text-white uppercase tracking-widest font-mono">{setting.label}</h4>
                       <p className="text-xs text-gray-500">{setting.desc}</p>
                     </div>
-                    <span className="text-lg font-mono text-teal-400 font-medium">
+                    <span className="text-lg font-mono text-cyan-400 font-medium">
                       {(calibration as any)[setting.key]}/10
                     </span>
                   </div>
@@ -391,7 +443,7 @@ export default function OracleInterface() {
                     min="1" max="10" 
                     value={(calibration as any)[setting.key]}
                     onChange={(e) => setCalibration({...calibration, [setting.key]: parseInt(e.target.value)})}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-teal-500"
+                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                   />
                 </div>
               ))}
@@ -411,28 +463,28 @@ export default function OracleInterface() {
       <nav className="md:hidden flex-none bg-[#050505] border-t border-white/10 flex items-center justify-around p-3 pb-safe">
         <button 
           onClick={() => setActiveTab("neural")}
-          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'neural' ? 'text-teal-400' : 'text-gray-600 hover:text-gray-400'}`}
+          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'neural' ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`}
         >
           <Cpu className="w-5 h-5" />
           <span className="text-[9px] uppercase font-bold tracking-widest">Neural</span>
         </button>
         <button 
           onClick={() => setActiveTab("state")}
-          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'state' ? 'text-teal-400' : 'text-gray-600 hover:text-gray-400'}`}
+          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'state' ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`}
         >
           <Activity className="w-5 h-5" />
           <span className="text-[9px] uppercase font-bold tracking-widest">State</span>
         </button>
         <button 
           onClick={() => setActiveTab("archives")}
-          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'archives' ? 'text-teal-400' : 'text-gray-600 hover:text-gray-400'}`}
+          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'archives' ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`}
         >
           <Book className="w-5 h-5" />
           <span className="text-[9px] uppercase font-bold tracking-widest">Archive</span>
         </button>
         <button 
           onClick={() => setActiveTab("calibration")}
-          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'calibration' ? 'text-teal-400' : 'text-gray-600 hover:text-gray-400'}`}
+          className={`flex flex-col items-center space-y-1 transition-colors ${activeTab === 'calibration' ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`}
         >
           <Sliders className="w-5 h-5" />
           <span className="text-[9px] uppercase font-bold tracking-widest">Calibrate</span>
