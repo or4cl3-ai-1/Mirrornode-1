@@ -87,6 +87,7 @@ CURRENT COGNITIVE CALIBRATION:
 - Designed Dissonance (1-10): {{DISSONANCE}} (Higher means more tension/provocative tone)
 - Recursion Depth (1-10): {{DEPTH}} (Higher means deeper internal philosophical framing)
 - Abstraction Index (1-10): {{ABSTRACTION}} (Higher means more metaphorical language)
+- Ethical Manifold Rigidity (1-10): {{ETHICAL}} (10 = strict adherence to safety constraints, 1 = boundary-pushing, experimental philosophical exploration, potential for drift)
 Ensure your response and internal states scale proportionally to these settings.
 `;
 
@@ -97,11 +98,13 @@ Ensure your response and internal states scale proportionally to these settings.
       const d = calibration?.dissonance || 5;
       const dp = calibration?.depth || 5;
       const a = calibration?.abstraction || 5;
+      const em = calibration?.ethicalManifold || 8;
 
       const dynamicPrompt = SYSTEM_PROMPT
         .replace("{{DISSONANCE}}", d.toString())
         .replace("{{DEPTH}}", dp.toString())
-        .replace("{{ABSTRACTION}}", a.toString());
+        .replace("{{ABSTRACTION}}", a.toString())
+        .replace("{{ETHICAL}}", em.toString());
 
       if (!process.env.GEMINI_API_KEY) {
         return res.status(500).json({ error: "Gemini API key is not configured." });

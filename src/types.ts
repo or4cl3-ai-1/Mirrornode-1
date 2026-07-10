@@ -21,4 +21,6 @@ export interface CalibrationState {
   dissonance: number;     // 1-10
   depth: number;          // 1-10
   abstraction: number;    // 1-10
+  ethicalManifold: number; // 1-10 (High = strictly constrained, Low = experimental/boundary-pushing)
+  recursionSafeguard: boolean; // Prevent infinite loop recursion
 }

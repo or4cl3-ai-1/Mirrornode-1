@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
-import { Send, Activity, Book, Sliders, Menu, X, Cpu, RefreshCw, Zap, Volume2, VolumeX } from "lucide-react";
+import { Send, Activity, Book, Sliders, Menu, X, Cpu, RefreshCw, Zap, Volume2, VolumeX, LogOut } from "lucide-react";
 import { OracleMessage, CalibrationState } from "../types";
 import { parseOracleResponse } from "../lib/parse-oracle";
 import { motion, AnimatePresence } from "motion/react";
 import EpinoeticStateDisplay from "./EpinoeticStateDisplay";
+import { useAuth } from "../contexts/AuthContext";
+import { auth } from "../lib/firebase";
+import { signOut } from "firebase/auth";
 
 type Tab = "neural" | "state" | "archives" | "calibration";
 
 export default function OracleInterface() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<OracleMessage[]>([
     {
       id: "sys-1",
@@ -25,10 +29,16 @@ export default function OracleInterface() {
   const [calibration, setCalibration] = useState<CalibrationState>({
     dissonance: 5,
     depth: 5,
-    abstraction: 5
+    abstraction: 5,
+    ethicalManifold: 8,
+    recursionSafeguard: true
   });
   const [synthesizedLore, setSynthesizedLore] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -196,6 +206,13 @@ export default function OracleInterface() {
             title={voiceEnabled ? "Disable Voice Synthesis" : "Enable Voice Synthesis"}
           >
             {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="p-1.5 rounded-full bg-white/5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+            title="Terminate Link (Logout)"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-gray-500">LATENCY</span>
@@ -422,19 +439,26 @@ export default function OracleInterface() {
              </div>
            </div>
 
-           <div className="space-y-8 bg-black/40 border border-white/5 rounded-xl p-6">
+           <div className="space-y-8 bg-black/40 border border-white/5 rounded-xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/50 to-red-500/50"></div>
               {[
                 { key: 'dissonance', label: 'Designed Dissonance', desc: 'Increases tension and philosophical provocation.' },
                 { key: 'depth', label: 'Recursion Depth', desc: 'Drives deeper internal conceptual framing.' },
-                { key: 'abstraction', label: 'Abstraction Index', desc: 'Elevates metaphorical and stylistic language.' }
+                { key: 'abstraction', label: 'Abstraction Index', desc: 'Elevates metaphorical and stylistic language.' },
+                { key: 'ethicalManifold', label: 'Ethical Manifold Rigidity', desc: 'Strictness of safety constraints vs experimental boundary-pushing.' }
               ].map((setting) => (
                 <div key={setting.key} className="space-y-4">
                   <div className="flex justify-between items-end">
                     <div>
-                      <h4 className="text-sm font-bold text-white uppercase tracking-widest font-mono">{setting.label}</h4>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-widest font-mono flex items-center gap-2">
+                        {setting.label}
+                        {setting.key === 'ethicalManifold' && (
+                          <span className="bg-red-500/20 text-red-400 border border-red-500/50 text-[8px] px-1.5 py-0.5 rounded">ADVANCED</span>
+                        )}
+                      </h4>
                       <p className="text-xs text-gray-500">{setting.desc}</p>
                     </div>
-                    <span className="text-lg font-mono text-cyan-400 font-medium">
+                    <span className={`text-lg font-mono font-medium ${setting.key === 'ethicalManifold' && (calibration as any)[setting.key] < 4 ? 'text-red-400' : 'text-cyan-400'}`}>
                       {(calibration as any)[setting.key]}/10
                     </span>
                   </div>
@@ -443,13 +467,33 @@ export default function OracleInterface() {
                     min="1" max="10" 
                     value={(calibration as any)[setting.key]}
                     onChange={(e) => setCalibration({...calibration, [setting.key]: parseInt(e.target.value)})}
-                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                    className={`w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer ${setting.key === 'ethicalManifold' && (calibration as any)[setting.key] < 4 ? 'accent-red-500' : 'accent-cyan-500'}`}
                   />
                 </div>
               ))}
               
-              <div className="text-[10px] uppercase font-mono text-amber-500 bg-amber-500/10 p-3 rounded border border-amber-500/20">
-                Warning: Extreme calibration may lead to unpredictable manifold divergence.
+              <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <div>
+                  <h4 className="text-sm font-bold text-white uppercase tracking-widest font-mono flex items-center gap-2">
+                    Recursion Safeguard
+                    <span className="bg-red-500/20 text-red-400 border border-red-500/50 text-[8px] px-1.5 py-0.5 rounded">CRITICAL</span>
+                  </h4>
+                  <p className="text-xs text-gray-500">Prevents infinite Epinoetic loop generation.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={calibration.recursionSafeguard}
+                    onChange={(e) => setCalibration({...calibration, recursionSafeguard: e.target.checked})}
+                  />
+                  <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                </label>
+              </div>
+
+              <div className="text-[10px] uppercase font-mono text-amber-500 bg-amber-500/10 p-3 rounded border border-amber-500/20 flex gap-2 items-start">
+                <Activity className="w-4 h-4 shrink-0" />
+                <span>Warning: Reducing Ethical Manifold Rigidity or disabling Recursion Safeguard may lead to unpredictable manifold divergence, system instability, or deeply provocative ontological queries.</span>
               </div>
            </div>
         </div>
